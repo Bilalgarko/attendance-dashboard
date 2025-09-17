@@ -1,4 +1,136 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <title>Class Attendance System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background: #e9e9e9; margin: 0; padding: 0; }
+        .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 30px 40px 40px 40px; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);}
+        h2 { text-align: center; color: #333; }
+        label { display: block; margin-top: 18px; margin-bottom: 6px; color: #222; }
+        input, select { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; background: #2e86de; color: #fff; border: none; padding: 12px; border-radius: 4px; margin-top: 18px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #1e5fab;}
+        .hidden { display: none; }
+        .success { color: green; text-align: center; margin-top: 20px;}
+        .fingerprint-section { text-align: center; margin-top: 18px; }
+        .fingerprint-btn { background: #27ae60; }
+        .fingerprint-btn:hover { background: #218c54; }
+    </style>
 </head>
+<body>
+<div class="container" id="loginContainer">
+    <h2>Login / Register</h2>
+    <form id="loginForm">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" name="fullName" required>
+
+        <label for="regNumber">Registration Number</label>
+        <input type="text" id="regNumber" name="regNumber" required>
+
+        <label for="course">Course of Study</label>
+        <input type="text" id="course" name="course" required>
+
+        <button type="submit">Create Dashboard</button>
+    </form>
+</div>
+
+<div class="container hidden" id="dashboardContainer">
+    <h2>Welcome, <span id="userName"></span></h2>
+    <p>Course: <span id="userCourse"></span></p>
+    <p>Registration No: <span id="userReg"></span></p>
+    <hr>
+    <h3>Attendance</h3>
+    <form id="attendanceForm">
+        <div class="fingerprint-section">
+            <button type="button" class="fingerprint-btn" id="fingerprintBtn">
+                Scan Fingerprint
+            </button>
+            <div id="fingerprintStatus"></div>
+        </div>
+        <button type="submit" id="markAttendanceBtn" disabled>Mark Attendance</button>
+    </form>
+    <div class="success hidden" id="attendanceSuccess">
+        Attendance recorded successfully!
+    </div>
+</div>
+
+<script>
+    // Handle Login/Register
+    const loginForm = document.getElementById('loginForm');
+    const loginContainer = document.getElementById('loginContainer');
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    const userName = document.getElementById('userName');
+    const userReg = document.getElementById('userReg');
+    const userCourse = document.getElementById('userCourse');
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('fullName').value;
+        const regNumber = document.getElementById('regNumber').value;
+        const course = document.getElementById('course').value;
+
+        // Save user data (in real projects, use backend/database)
+        localStorage.setItem('attendanceUser', JSON.stringify({
+            fullName,
+            regNumber,
+            course
+        }));
+
+        userName.textContent = fullName;
+        userReg.textContent = regNumber;
+        userCourse.textContent = course;
+
+        loginContainer.classList.add('hidden');
+        dashboardContainer.classList.remove('hidden');
+    });
+
+    // If already logged in
+    window.onload = function() {
+        const user = localStorage.getItem('attendanceUser');
+        if (user) {
+            const { fullName, regNumber, course } = JSON.parse(user);
+            userName.textContent = fullName;
+            userReg.textContent = regNumber;
+            userCourse.textContent = course;
+            loginContainer.classList.add('hidden');
+            dashboardContainer.classList.remove('hidden');
+        }
+    };
+
+    // Fingerprint Simulation
+    const fingerprintBtn = document.getElementById('fingerprintBtn');
+    const fingerprintStatus = document.getElementById('fingerprintStatus');
+    const markAttendanceBtn = document.getElementById('markAttendanceBtn');
+    let fingerprintVerified = false;
+
+    fingerprintBtn.addEventListener('click', function() {
+        fingerprintStatus.textContent = "Scanning fingerprint...";
+        markAttendanceBtn.disabled = true;
+
+        // Simulate fingerprint scan
+        setTimeout(() => {
+            fingerprintStatus.textContent = "Fingerprint recognized!";
+            fingerprintStatus.style.color = "green";
+            fingerprintVerified = true;
+            markAttendanceBtn.disabled = false;
+        }, 1700);
+    });
+
+    // Attendance
+    const attendanceForm = document.getElementById('attendanceForm');
+    const attendanceSuccess = document.getElementById('attendanceSuccess');
+    attendanceForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (fingerprintVerified) {
+            attendanceSuccess.classList.remove('hidden');
+        } else {
+            attendanceSuccess.textContent = "Please verify fingerprint first!";
+            attendanceSuccess.classList.remove('hidden');
+            attendanceSuccess.style.color = 'red';
+        }
+    });
+</script>
+</body>
 </html>
