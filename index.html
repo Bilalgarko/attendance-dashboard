@@ -8,7 +8,6 @@
         body { 
             font-family: Arial, sans-serif; 
             background: linear-gradient(135deg, #134e1a 0%, #e9f5e1 100%);
-            /* Dark green to light green background */
             margin: 0; 
             padding: 0; 
             min-height: 100vh;
@@ -17,7 +16,6 @@
             max-width: 400px; 
             margin: 40px auto; 
             background: #fff;
-            /* White content panel */
             padding: 30px 40px 40px 40px; 
             border-radius: 16px; 
             box-shadow: 0 4px 24px rgba(19, 78, 26, 0.18), 0 0px 0px #134e1a;
@@ -122,7 +120,6 @@
         .profile-info-fields {
             flex: 1;
         }
-        /* Custom scroll bar */
         ::-webkit-scrollbar {width: 9px;}
         ::-webkit-scrollbar-thumb {background: #1c6e34; border-radius: 5px;}
         ::-webkit-scrollbar-track {background: #daf5d7;}
@@ -132,6 +129,11 @@
 <!-- Attendance for All (Visible to Everyone) -->
 <div class="container wide-container hidden" id="allAttendanceContainer">
     <h2>All Students' Attendance Records</h2>
+    <div class="dashboard-links" style="margin-bottom:8px;">
+        <button id="printAttendanceBtn" style="width:auto;background:#208b3a;color:#fff;padding:8px 18px;margin-bottom:8px;border-radius:6px;font-size:15px;border: none;cursor:pointer;box-shadow:0 2px 6px rgba(19,78,26,0.10);">
+            Print All Attendance Report
+        </button>
+    </div>
     <div id="allAttendanceRecords"></div>
     <div class="dashboard-links">
         <a id="backToDashboard" href="#">Back to Dashboard</a>
@@ -250,9 +252,7 @@
 </div>
 
 <script>
-    // Simulated "admin" credentials (still present if needed)
-    const CLASS_MASTER_REG = "classmaster";
-    const CLASS_MASTER_PASS = "master123";
+    // ... (existing JS code above remains the same) ...
 
     // Profile photo utility
     function readAndPreviewPhoto(file, callback) {
@@ -277,7 +277,6 @@
 
     registerForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        // All fields are required by HTML5, but we double-check for JS enforcement.
         const fullName = document.getElementById('regFullName').value.trim();
         const regNumber = document.getElementById('regRegNumber').value.trim();
         const course = document.getElementById('regCourse').value.trim();
@@ -391,8 +390,7 @@
             forgotPasswordError.classList.remove('hidden');
             return;
         }
-        // Accept either MM/DD/YYYY or DD/MM/YYYY for flexibility, match either
-        const lastAttendanceSanitized = lastAttendance.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,''); // Remove spaces and unify separator
+        const lastAttendanceSanitized = lastAttendance.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,'');
         const attendedDates = user.attendance.map(a => a.date.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,''));
         const matched = attendedDates.some(d => d === lastAttendanceSanitized);
         if (!matched) {
@@ -412,7 +410,6 @@
         const regNumber = document.getElementById('loginRegNumber').value.trim();
         const password = document.getElementById('loginPassword').value;
 
-        // Admin login (kept, though not necessary for open attendance)
         if(regNumber === CLASS_MASTER_REG && password === CLASS_MASTER_PASS) {
             localStorage.setItem('attendanceCurrentUser', CLASS_MASTER_REG);
             showAllAttendance();
@@ -457,12 +454,10 @@
         userReg.textContent = user.regNumber;
         userCourse.textContent = user.course;
         userField.textContent = user.field || '';
-        // Handle photo
         let url = user.profilePhoto;
         if (url) {
             profilePhoto.src = url;
         } else {
-            // fallback avatar with initials
             profilePhoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}`;
         }
     }
@@ -478,12 +473,53 @@
         document.getElementById('attendanceForm').onsubmit = handleAttendance;
     };
 
+    // My Attendance Print Button
+    function insertPrintMyAttendanceButton(myAttendanceTable, user) {
+        if(document.getElementById('printMyAttendanceBtn')) return;
+        const btn = document.createElement('button');
+        btn.id = "printMyAttendanceBtn";
+        btn.textContent = "Print My Attendance";
+        btn.style.cssText = "width:auto;background:#208b3a;color:#fff;padding:8px 18px;margin-bottom:12px;border-radius:6px;font-size:15px;border: none;cursor:pointer;box-shadow:0 2px 6px rgba(19,78,26,0.10);display:block;margin-left:auto;margin-right:auto;";
+        btn.onclick = function() {
+            const printWindow = window.open('', '', 'width=800,height=650');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>My Attendance Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 36px; color: #134e1a;}
+                        h2 { text-align: center; color: #134e1a;}
+                        .attendance-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #f3fcf7;}
+                        .attendance-table th, .attendance-table td { padding: 8px; border: 1.2px solid #1c6e34; text-align: center;}
+                        .attendance-table th { background: #daf5d7; color: #134e1a;}
+                        .profile-photo { width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 2.5px solid #208b3a; margin-bottom: 8px;}
+                    </style>
+                </head>
+                <body>
+                    <h2>Attendance Report for ${user.fullName} (${user.regNumber})</h2>
+                    <div style="text-align:center;">
+                        <img class="profile-photo" src="${user.profilePhoto ? user.profilePhoto : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}`}" alt="Profile Photo">
+                        <div style="font-size:1.2em;margin-bottom:4px;">${user.course} | ${user.field}</div>
+                    </div>
+                    ${myAttendanceTable.outerHTML}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        };
+        myAttendanceTable.parentNode.insertBefore(btn, myAttendanceTable);
+    }
+
     viewAttendanceLink.onclick = function() {
         const regNumber = localStorage.getItem('attendanceCurrentUser');
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
         const user = users[regNumber];
         if(user) {
-            let table = `<table class="attendance-table">
+            let table = `<table class="attendance-table" id="myAttendanceTable">
                 <tr><th>#</th><th>Date</th><th>Time</th></tr>`;
             if(user.attendance.length === 0) {
                 table += "<tr><td colspan='3'>No attendance records.</td></tr>";
@@ -498,6 +534,8 @@
             }
             table += "</table>";
             dashboardSection.innerHTML = `<h3>My Attendance</h3>${table}`;
+            const myAttendanceTable = document.getElementById('myAttendanceTable');
+            insertPrintMyAttendanceButton(myAttendanceTable, user);
         }
     };
 
@@ -525,7 +563,6 @@
         if(user) {
             const now = new Date();
             const date = now.toLocaleDateString();
-            // Check if attendance already marked today
             const alreadyMarked = user.attendance.some(entry => entry.date === date);
             if(alreadyMarked) {
                 attendanceError.textContent = "You have already marked attendance for today.";
@@ -550,7 +587,6 @@
         dashboardSection.innerHTML = '';
     }
 
-    // Profile Edit
     editProfileBtn.onclick = function() {
         const regNumber = localStorage.getItem('attendanceCurrentUser');
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
@@ -583,10 +619,8 @@
             editProfileError.classList.remove('hidden');
             return;
         }
-        // Handle photo upload
         const file = editProfilePhoto.files[0];
         if (file) {
-            // Only preview and store small images in base64 for demo purposes
             if (file.size > 1024 * 1024) {
                 editProfileError.textContent = "Profile photo must be less than 1MB.";
                 editProfileError.classList.remove('hidden');
@@ -616,6 +650,7 @@
     const allAttendanceRecords = document.getElementById('allAttendanceRecords');
     const backToDashboard = document.getElementById('backToDashboard');
     const logoutAllAttendance = document.getElementById('logoutAllAttendance');
+    const printAttendanceBtn = document.getElementById('printAttendanceBtn');
 
     backToDashboard.onclick = function() {
         const regNumber = localStorage.getItem('attendanceCurrentUser');
@@ -623,7 +658,6 @@
             const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
             showDashboard(users[regNumber]);
         } else {
-            // Go to login if not logged in as student
             allAttendanceContainer.classList.add('hidden');
             loginContainer.classList.remove('hidden');
         }
@@ -635,13 +669,41 @@
         loginContainer.classList.remove('hidden');
     };
 
+    printAttendanceBtn.onclick = function() {
+        const attendanceContent = document.getElementById('allAttendanceRecords').innerHTML;
+        const printWindow = window.open('', '', 'width=1000,height=700');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Attendance Report</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 28px; color: #134e1a;}
+                    h2 { text-align: center; color: #134e1a;}
+                    .admin-section { background: #eafaea; border: 1.5px solid #178a42; padding: 18px; border-radius: 12px; margin-top: 30px;}
+                    .attendance-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #f3fcf7;}
+                    .attendance-table th, .attendance-table td { padding: 8px; border: 1.2px solid #1c6e34; text-align: center;}
+                    .attendance-table th { background: #daf5d7; color: #134e1a;}
+                    img { width: 36px; height: 36px; object-fit: cover; border-radius: 50%; vertical-align: middle; margin-right: 10px; border: 1.5px solid #208b3a;}
+                </style>
+            </head>
+            <body>
+                <h2>All Students' Attendance Records</h2>
+                ${attendanceContent}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    };
+
     function showAllAttendance() {
         registerContainer.classList.add('hidden');
         loginContainer.classList.add('hidden');
         dashboardContainer.classList.add('hidden');
         allAttendanceContainer.classList.remove('hidden');
-
-        // Show all attendance records for all students
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
         let html = '';
         let hasAttendance = false;
@@ -675,7 +737,6 @@
         allAttendanceRecords.innerHTML = html;
     }
 
-    // On Load
     window.onload = function() {
         const currentUser = localStorage.getItem('attendanceCurrentUser');
         if(currentUser === CLASS_MASTER_REG) {
