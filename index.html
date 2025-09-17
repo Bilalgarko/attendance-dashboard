@@ -87,23 +87,23 @@
 <div class="container" id="registerContainer">
     <h2>Create Your Profile</h2>
     <form id="registerForm">
-        <label for="fullName">Full Name</label>
-        <input type="text" id="regFullName" name="fullName" required>
+        <label for="fullName">Full Name <span style="color:red">*</span></label>
+        <input type="text" id="regFullName" name="fullName" required autocomplete="off">
 
-        <label for="regNumber">Registration Number</label>
-        <input type="text" id="regRegNumber" name="regNumber" required>
+        <label for="regNumber">Registration Number <span style="color:red">*</span></label>
+        <input type="text" id="regRegNumber" name="regNumber" required autocomplete="off">
 
-        <label for="course">Course of Study</label>
-        <input type="text" id="regCourse" name="course" required>
+        <label for="course">Course of Study <span style="color:red">*</span></label>
+        <input type="text" id="regCourse" name="course" required autocomplete="off">
 
-        <label for="fieldOfStudy">Field of Study</label>
-        <input type="text" id="regField" name="fieldOfStudy" required>
+        <label for="fieldOfStudy">Field of Study <span style="color:red">*</span></label>
+        <input type="text" id="regField" name="fieldOfStudy" required autocomplete="off">
 
-        <label for="regPassword">Create Password</label>
-        <input type="password" id="regPassword" name="password" required minlength="6">
+        <label for="regPassword">Create Password <span style="color:red">*</span></label>
+        <input type="password" id="regPassword" name="password" required minlength="6" autocomplete="new-password">
 
-        <label for="regConfirmPassword">Confirm Password</label>
-        <input type="password" id="regConfirmPassword" name="confirmPassword" required minlength="6">
+        <label for="regConfirmPassword">Confirm Password <span style="color:red">*</span></label>
+        <input type="password" id="regConfirmPassword" name="confirmPassword" required minlength="6" autocomplete="new-password">
 
         <div class="error hidden" id="registerError"></div>
         <button type="submit">Create Profile</button>
@@ -117,11 +117,11 @@
 <div class="container hidden" id="loginContainer">
     <h2>Login</h2>
     <form id="loginForm">
-        <label for="loginRegNumber">Registration Number</label>
-        <input type="text" id="loginRegNumber" name="loginRegNumber" required>
+        <label for="loginRegNumber">Registration Number <span style="color:red">*</span></label>
+        <input type="text" id="loginRegNumber" name="loginRegNumber" required autocomplete="off">
 
-        <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" name="loginPassword" required>
+        <label for="loginPassword">Password <span style="color:red">*</span></label>
+        <input type="password" id="loginPassword" name="loginPassword" required autocomplete="current-password">
 
         <div class="error hidden" id="loginError"></div>
         <button type="submit">Login</button>
@@ -164,12 +164,19 @@
 
     registerForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        // All fields are required by HTML5, but we double-check for JS enforcement.
         const fullName = document.getElementById('regFullName').value.trim();
         const regNumber = document.getElementById('regRegNumber').value.trim();
         const course = document.getElementById('regCourse').value.trim();
         const field = document.getElementById('regField').value.trim();
         const password = document.getElementById('regPassword').value;
         const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if(!fullName || !regNumber || !course || !field || !password || !confirmPassword) {
+            registerError.textContent = "All fields are required.";
+            registerError.classList.remove('hidden');
+            return;
+        }
 
         if(password !== confirmPassword) {
             registerError.textContent = "Passwords do not match.";
@@ -254,6 +261,7 @@
                 <button type="submit" id="markAttendanceBtn">Mark Attendance</button>
             </form>
             <div class="success hidden" id="attendanceSuccess">Attendance recorded successfully!</div>
+            <div class="error hidden" id="attendanceError"></div>
         `;
         document.getElementById('attendanceForm').onsubmit = handleAttendance;
     };
@@ -297,14 +305,26 @@
         const regNumber = localStorage.getItem('attendanceCurrentUser');
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
         const user = users[regNumber];
+        const attendanceSuccess = document.getElementById('attendanceSuccess');
+        const attendanceError = document.getElementById('attendanceError');
+        attendanceSuccess.classList.add('hidden');
+        attendanceError.classList.add('hidden');
+
         if(user) {
             const now = new Date();
             const date = now.toLocaleDateString();
+            // Check if attendance already marked today
+            const alreadyMarked = user.attendance.some(entry => entry.date === date);
+            if(alreadyMarked) {
+                attendanceError.textContent = "You have already marked attendance for today.";
+                attendanceError.classList.remove('hidden');
+                return;
+            }
             const time = now.toLocaleTimeString();
             user.attendance.push({ date, time });
             users[regNumber] = user;
             localStorage.setItem('attendanceUsers', JSON.stringify(users));
-            document.getElementById('attendanceSuccess').classList.remove('hidden');
+            attendanceSuccess.classList.remove('hidden');
         }
     }
 
