@@ -7,7 +7,8 @@
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            background: linear-gradient(135deg, #dbeafe 0%, #f1f5f9 100%);
+            background: linear-gradient(135deg, #134e1a 0%, #e9f5e1 100%);
+            /* Dark green to light green background */
             margin: 0; 
             padding: 0; 
             min-height: 100vh;
@@ -15,26 +16,33 @@
         .container { 
             max-width: 400px; 
             margin: 40px auto; 
-            background: #fff; 
+            background: #fff;
+            /* White content panel */
             padding: 30px 40px 40px 40px; 
-            border-radius: 14px; 
-            box-shadow: 0 4px 24px rgba(30, 64, 175, 0.12);
+            border-radius: 16px; 
+            box-shadow: 0 4px 24px rgba(19, 78, 26, 0.18), 0 0px 0px #134e1a;
+            border: 2px solid #1c6e34;
         }
         .wide-container {
             max-width: 900px;
         }
-        h2 { text-align: center; color: #2563eb; }
-        label { display: block; margin-top: 18px; margin-bottom: 6px; color: #222; }
+        h2 { text-align: center; color: #134e1a; }
+        label { display: block; margin-top: 18px; margin-bottom: 6px; color: #134e1a; font-weight: 500;}
         input, select { 
             width: 100%; 
             padding: 9px; 
-            border: 1px solid #cbd5e1; 
+            border: 1.5px solid #1c6e34; 
             border-radius: 5px; 
-            background: #f8fafc;
+            background: #e9f5e1;
+            color: #134e1a;
+        }
+        input:focus, select:focus {
+            outline: 2px solid #1c6e34;
+            background: #d8f3c5;
         }
         button { 
             width: 100%; 
-            background: #2563eb; 
+            background: #134e1a; 
             color: #fff; 
             border: none; 
             padding: 12px; 
@@ -42,34 +50,82 @@
             margin-top: 18px; 
             font-size: 16px; 
             cursor: pointer; 
-            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+            box-shadow: 0 2px 6px rgba(19, 78, 26, 0.12);
             transition: background 0.2s;
         }
-        button:hover { background: #1d4ed8;}
+        button:hover, .profile-edit-btn:hover { background: #208b3a;}
         .hidden { display: none; }
-        .success { color: green; text-align: center; margin-top: 20px;}
-        .error { color: red; text-align: center; margin-top: 10px;}
+        .success { color: #178a42; text-align: center; margin-top: 20px;}
+        .error { color: #ac2626; text-align: center; margin-top: 10px;}
         .attendance-table { 
             width: 100%; 
             border-collapse: collapse; 
             margin-top: 20px;
-            background: #f8fafc;
+            background: #f3fcf7;
         }
         .attendance-table th, .attendance-table td { 
             padding: 8px; 
-            border: 1px solid #e5e7eb; 
+            border: 1.2px solid #1c6e34; 
             text-align: center;
         }
-        .attendance-table th { background: #e0e7ef; color: #2563eb;}
+        .attendance-table th { background: #daf5d7; color: #134e1a;}
         .dashboard-links { text-align: center; margin-bottom: 20px;}
-        .dashboard-links a { margin: 0 7px; color: #2563eb; text-decoration: underline; cursor: pointer;}
+        .dashboard-links a { margin: 0 7px; color: #208b3a; text-decoration: underline; cursor: pointer;}
         .admin-section { 
-            background: #f1f5f9; 
-            border: 1px solid #cbd5e1; 
+            background: #eafaea; 
+            border: 1.5px solid #178a42; 
             padding: 18px; 
-            border-radius: 10px; 
+            border-radius: 12px; 
             margin-top: 30px;
         }
+        .profile-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 18px;
+            background: #daf5d7;
+            border-radius: 11px;
+            padding: 12px;
+            border: 1px solid #1c6e34;
+        }
+        .profile-photo {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2.5px solid #208b3a;
+            margin-right: 16px;
+            background: #e9f5e1;
+        }
+        .profile-edit-btn {
+            background: #208b3a;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: auto;
+            margin-left: 10px;
+            font-size: 13px;
+            box-shadow: 0 1px 3px rgba(19,78,26,0.08);
+            transition: background 0.2s;
+        }
+        .profile-edit-btn:active {
+            background: #155d27;
+        }
+        .profile-edit-form input[type="file"] {
+            padding: 0;
+        }
+        .profile-edit-form input,
+        .profile-edit-form button {
+            margin-top: 8px;
+        }
+        .profile-info-fields {
+            flex: 1;
+        }
+        /* Custom scroll bar */
+        ::-webkit-scrollbar {width: 9px;}
+        ::-webkit-scrollbar-thumb {background: #1c6e34; border-radius: 5px;}
+        ::-webkit-scrollbar-track {background: #daf5d7;}
     </style>
 </head>
 <body>
@@ -86,7 +142,7 @@
 <!-- Registration Page -->
 <div class="container" id="registerContainer">
     <h2>Create Your Profile</h2>
-    <form id="registerForm">
+    <form id="registerForm" autocomplete="off">
         <label for="fullName">Full Name <span style="color:red">*</span></label>
         <input type="text" id="regFullName" name="fullName" required autocomplete="off">
 
@@ -116,7 +172,7 @@
 <!-- Login Page -->
 <div class="container hidden" id="loginContainer">
     <h2>Login</h2>
-    <form id="loginForm">
+    <form id="loginForm" autocomplete="off">
         <label for="loginRegNumber">Registration Number <span style="color:red">*</span></label>
         <input type="text" id="loginRegNumber" name="loginRegNumber" required autocomplete="off">
 
@@ -125,18 +181,65 @@
 
         <div class="error hidden" id="loginError"></div>
         <button type="submit">Login</button>
+        <div class="dashboard-links" style="margin-top:12px;">
+            <span>No profile? <a id="toRegister">Create one</a></span><br>
+            <span><a id="toForgotPassword" style="color:#208b3a;">Forgot Password?</a></span>
+        </div>
+    </form>
+</div>
+
+<!-- Forgot Password Page -->
+<div class="container hidden" id="forgotPasswordContainer">
+    <h2>Reset Password</h2>
+    <form id="forgotPasswordForm" autocomplete="off">
+        <label for="fpRegNumber">Registration Number <span style="color:red">*</span></label>
+        <input type="text" id="fpRegNumber" required autocomplete="off">
+
+        <label for="fpLastAttendance">Last Day of Attendance (format: MM/DD/YYYY or DD/MM/YYYY) <span style="color:red">*</span></label>
+        <input type="text" id="fpLastAttendance" placeholder="e.g., 09/17/2025" required autocomplete="off">
+
+        <label for="fpNewPassword">New Password <span style="color:red">*</span></label>
+        <input type="password" id="fpNewPassword" required minlength="6" autocomplete="new-password">
+
+        <label for="fpConfirmPassword">Confirm New Password <span style="color:red">*</span></label>
+        <input type="password" id="fpConfirmPassword" required minlength="6" autocomplete="new-password">
+
+        <div class="error hidden" id="forgotPasswordError"></div>
+        <div class="success hidden" id="forgotPasswordSuccess"></div>
+        <button type="submit">Reset Password</button>
         <div class="dashboard-links">
-            No profile? <a id="toRegister">Create one</a>
+            <a id="fpBackToLogin">Back to Login</a>
         </div>
     </form>
 </div>
 
 <!-- Dashboard Page -->
 <div class="container hidden" id="dashboardContainer">
-    <h2>Welcome, <span id="userName"></span></h2>
-    <p>Course: <span id="userCourse"></span></p>
-    <p>Field of Study: <span id="userField"></span></p>
-    <p>Registration No: <span id="userReg"></span></p>
+    <div class="profile-section">
+        <img id="profilePhoto" class="profile-photo" src="https://ui-avatars.com/api/?name=User" alt="Profile Photo">
+        <div class="profile-info-fields">
+            <span style="font-size:1.3em;font-weight:bold;color:#134e1a;" id="userName"></span>
+            <br>
+            <span id="userCourse"></span> | 
+            <span id="userField"></span>
+            <br>
+            <span style="font-size:.96em;color:#178a42;">Reg No: <span id="userReg"></span></span>
+        </div>
+        <button class="profile-edit-btn" id="editProfileBtn" title="Edit Profile">Edit</button>
+    </div>
+    <form class="profile-edit-form hidden" id="profileEditForm" enctype="multipart/form-data" autocomplete="off">
+        <label for="editFullName">Full Name</label>
+        <input type="text" id="editFullName" required>
+        <label for="editCourse">Course of Study</label>
+        <input type="text" id="editCourse" required>
+        <label for="editField">Field of Study</label>
+        <input type="text" id="editField" required>
+        <label for="editProfilePhoto">Profile Photo</label>
+        <input type="file" id="editProfilePhoto" accept="image/*">
+        <div class="error hidden" id="editProfileError"></div>
+        <button type="submit" style="background:#134e1a;color:#fff;">Save Changes</button>
+        <button type="button" id="cancelEditProfile" style="background:#e9f5e1;color:#178a42;">Cancel</button>
+    </form>
     <div class="dashboard-links">
         <a id="markAttendanceLink" href="#">Mark Attendance</a> | 
         <a id="viewAttendanceLink" href="#">My Attendance</a> | 
@@ -150,6 +253,16 @@
     // Simulated "admin" credentials (still present if needed)
     const CLASS_MASTER_REG = "classmaster";
     const CLASS_MASTER_PASS = "master123";
+
+    // Profile photo utility
+    function readAndPreviewPhoto(file, callback) {
+        if (!file) return callback('');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            callback(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
 
     // Registration
     const registerContainer = document.getElementById('registerContainer');
@@ -201,6 +314,7 @@
             course,
             field,
             password,
+            profilePhoto: "",
             attendance: []
         };
         localStorage.setItem('attendanceUsers', JSON.stringify(users));
@@ -220,6 +334,78 @@
         loginContainer.classList.add('hidden');
         registerContainer.classList.remove('hidden');
     };
+
+    // Forgot Password
+    const toForgotPassword = document.getElementById('toForgotPassword');
+    const forgotPasswordContainer = document.getElementById('forgotPasswordContainer');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const fpBackToLogin = document.getElementById('fpBackToLogin');
+    const forgotPasswordError = document.getElementById('forgotPasswordError');
+    const forgotPasswordSuccess = document.getElementById('forgotPasswordSuccess');
+
+    toForgotPassword.onclick = function() {
+        loginContainer.classList.add('hidden');
+        forgotPasswordContainer.classList.remove('hidden');
+        forgotPasswordForm.reset();
+        forgotPasswordError.classList.add('hidden');
+        forgotPasswordSuccess.classList.add('hidden');
+    };
+    fpBackToLogin.onclick = function() {
+        forgotPasswordContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    forgotPasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        forgotPasswordError.classList.add('hidden');
+        forgotPasswordSuccess.classList.add('hidden');
+        const regNumber = document.getElementById('fpRegNumber').value.trim();
+        const lastAttendance = document.getElementById('fpLastAttendance').value.trim();
+        const newPassword = document.getElementById('fpNewPassword').value;
+        const confirmPassword = document.getElementById('fpConfirmPassword').value;
+
+        if (!regNumber || !lastAttendance || !newPassword || !confirmPassword) {
+            forgotPasswordError.textContent = "All fields are required.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            forgotPasswordError.textContent = "Passwords do not match.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        if (newPassword.length < 6) {
+            forgotPasswordError.textContent = "Password must be at least 6 characters.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) {
+            forgotPasswordError.textContent = "Registration number not found.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        if (!user.attendance || user.attendance.length === 0) {
+            forgotPasswordError.textContent = "No attendance records found for this user.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        // Accept either MM/DD/YYYY or DD/MM/YYYY for flexibility, match either
+        const lastAttendanceSanitized = lastAttendance.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,''); // Remove spaces and unify separator
+        const attendedDates = user.attendance.map(a => a.date.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,''));
+        const matched = attendedDates.some(d => d === lastAttendanceSanitized);
+        if (!matched) {
+            forgotPasswordError.textContent = "Last attendance date does not match our records.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        user.password = newPassword;
+        users[regNumber] = user;
+        localStorage.setItem('attendanceUsers', JSON.stringify(users));
+        forgotPasswordSuccess.textContent = "Password reset successful! You can now login with your new password.";
+        forgotPasswordSuccess.classList.remove('hidden');
+    });
 
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -249,11 +435,37 @@
     const userReg = document.getElementById('userReg');
     const userCourse = document.getElementById('userCourse');
     const userField = document.getElementById('userField');
+    const profilePhoto = document.getElementById('profilePhoto');
     const dashboardSection = document.getElementById('dashboardSection');
     const markAttendanceLink = document.getElementById('markAttendanceLink');
     const viewAttendanceLink = document.getElementById('viewAttendanceLink');
     const viewAllAttendanceLink = document.getElementById('viewAllAttendanceLink');
     const logoutBtn = document.getElementById('logoutBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const profileEditForm = document.getElementById('profileEditForm');
+    const editFullName = document.getElementById('editFullName');
+    const editCourse = document.getElementById('editCourse');
+    const editField = document.getElementById('editField');
+    const editProfilePhoto = document.getElementById('editProfilePhoto');
+    const editProfileError = document.getElementById('editProfileError');
+    const cancelEditProfile = document.getElementById('cancelEditProfile');
+
+    let currentProfilePhotoURL = "";
+
+    function updateProfileUI(user) {
+        userName.textContent = user.fullName;
+        userReg.textContent = user.regNumber;
+        userCourse.textContent = user.course;
+        userField.textContent = user.field || '';
+        // Handle photo
+        let url = user.profilePhoto;
+        if (url) {
+            profilePhoto.src = url;
+        } else {
+            // fallback avatar with initials
+            profilePhoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}`;
+        }
+    }
 
     markAttendanceLink.onclick = function() {
         dashboardSection.innerHTML = `
@@ -333,12 +545,71 @@
         loginContainer.classList.add('hidden');
         dashboardContainer.classList.remove('hidden');
         allAttendanceContainer.classList.add('hidden');
-        userName.textContent = user.fullName;
-        userReg.textContent = user.regNumber;
-        userCourse.textContent = user.course;
-        userField.textContent = user.field || '';
+        profileEditForm.classList.add('hidden');
+        updateProfileUI(user);
         dashboardSection.innerHTML = '';
     }
+
+    // Profile Edit
+    editProfileBtn.onclick = function() {
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) return;
+        editFullName.value = user.fullName;
+        editCourse.value = user.course;
+        editField.value = user.field;
+        currentProfilePhotoURL = user.profilePhoto || "";
+        profileEditForm.classList.remove('hidden');
+    };
+
+    cancelEditProfile.onclick = function() {
+        profileEditForm.classList.add('hidden');
+        editProfileError.classList.add('hidden');
+    };
+
+    profileEditForm.onsubmit = function(e) {
+        e.preventDefault();
+        editProfileError.classList.add('hidden');
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) return;
+        const newFullName = editFullName.value.trim();
+        const newCourse = editCourse.value.trim();
+        const newField = editField.value.trim();
+        if (!newFullName || !newCourse || !newField) {
+            editProfileError.textContent = "All fields are required.";
+            editProfileError.classList.remove('hidden');
+            return;
+        }
+        // Handle photo upload
+        const file = editProfilePhoto.files[0];
+        if (file) {
+            // Only preview and store small images in base64 for demo purposes
+            if (file.size > 1024 * 1024) {
+                editProfileError.textContent = "Profile photo must be less than 1MB.";
+                editProfileError.classList.remove('hidden');
+                return;
+            }
+            readAndPreviewPhoto(file, function(dataUrl) {
+                user.profilePhoto = dataUrl;
+                finishProfileEditUpdate();
+            });
+        } else {
+            user.profilePhoto = currentProfilePhotoURL;
+            finishProfileEditUpdate();
+        }
+        function finishProfileEditUpdate() {
+            user.fullName = newFullName;
+            user.course = newCourse;
+            user.field = newField;
+            users[regNumber] = user;
+            localStorage.setItem('attendanceUsers', JSON.stringify(users));
+            profileEditForm.classList.add('hidden');
+            updateProfileUI(user);
+        }
+    };
 
     // All Attendance (Visible to Everyone)
     const allAttendanceContainer = document.getElementById('allAttendanceContainer');
@@ -376,8 +647,12 @@
         let hasAttendance = false;
         for(const reg in users) {
             const user = users[reg];
+            let img = user.profilePhoto
+                ? `<img src="${user.profilePhoto}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px;border:1.5px solid #208b3a;">`
+                : `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px;border:1.5px solid #208b3a;">`;
             html += `<div class="admin-section">
-                <strong>${user.fullName} (${user.regNumber})</strong><br>
+                ${img}
+                <strong style="vertical-align:middle;">${user.fullName} (${user.regNumber})</strong><br>
                 <em>Course: ${user.course} <br>Field: ${user.field || ''}</em>
                 <table class="attendance-table" style="margin-top:10px;">
                     <tr><th>#</th><th>Date</th><th>Time</th></tr>
