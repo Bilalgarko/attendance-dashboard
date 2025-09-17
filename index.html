@@ -5,132 +5,367 @@
     <title>Class Attendance System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; background: #e9e9e9; margin: 0; padding: 0; }
-        .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 30px 40px 40px 40px; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.1);}
-        h2 { text-align: center; color: #333; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #dbeafe 0%, #f1f5f9 100%);
+            /* A soft blue-gray gradient for a calm, modern look */
+            margin: 0; 
+            padding: 0; 
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 400px; 
+            margin: 40px auto; 
+            background: #fff; 
+            padding: 30px 40px 40px 40px; 
+            border-radius: 14px; 
+            box-shadow: 0 4px 24px rgba(30, 64, 175, 0.12);
+        }
+        h2 { text-align: center; color: #2563eb; }
         label { display: block; margin-top: 18px; margin-bottom: 6px; color: #222; }
-        input, select { width: 100%; padding: 9px; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; background: #2e86de; color: #fff; border: none; padding: 12px; border-radius: 4px; margin-top: 18px; font-size: 16px; cursor: pointer; }
-        button:hover { background: #1e5fab;}
+        input, select { 
+            width: 100%; 
+            padding: 9px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 5px; 
+            background: #f8fafc;
+        }
+        button { 
+            width: 100%; 
+            background: #2563eb; 
+            color: #fff; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 5px; 
+            margin-top: 18px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+            transition: background 0.2s;
+        }
+        button:hover { background: #1d4ed8;}
         .hidden { display: none; }
         .success { color: green; text-align: center; margin-top: 20px;}
-        .fingerprint-section { text-align: center; margin-top: 18px; }
-        .fingerprint-btn { background: #27ae60; }
-        .fingerprint-btn:hover { background: #218c54; }
+        .error { color: red; text-align: center; margin-top: 10px;}
+        .attendance-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+            background: #f8fafc;
+        }
+        .attendance-table th, .attendance-table td { 
+            padding: 8px; 
+            border: 1px solid #e5e7eb; 
+            text-align: center;
+        }
+        .attendance-table th { background: #e0e7ef; color: #2563eb;}
+        .dashboard-links { text-align: center; margin-bottom: 20px;}
+        .dashboard-links a { margin: 0 7px; color: #2563eb; text-decoration: underline; cursor: pointer;}
+        .admin-section { 
+            background: #f1f5f9; 
+            border: 1px solid #cbd5e1; 
+            padding: 18px; 
+            border-radius: 10px; 
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
-<div class="container" id="loginContainer">
-    <h2>Login / Register</h2>
-    <form id="loginForm">
+<!-- Home Page (visible only to class master) -->
+<div class="container hidden" id="homeContainer">
+    <h2>Class Attendance Records</h2>
+    <div id="attendanceRecords"></div>
+    <div class="dashboard-links">
+        <a id="logoutHome" href="#">Logout</a>
+    </div>
+</div>
+
+<!-- Registration Page -->
+<div class="container" id="registerContainer">
+    <h2>Create Your Profile</h2>
+    <form id="registerForm">
         <label for="fullName">Full Name</label>
-        <input type="text" id="fullName" name="fullName" required>
+        <input type="text" id="regFullName" name="fullName" required>
 
         <label for="regNumber">Registration Number</label>
-        <input type="text" id="regNumber" name="regNumber" required>
+        <input type="text" id="regRegNumber" name="regNumber" required>
 
         <label for="course">Course of Study</label>
-        <input type="text" id="course" name="course" required>
+        <input type="text" id="regCourse" name="course" required>
 
-        <button type="submit">Create Dashboard</button>
+        <label for="regPassword">Create Password</label>
+        <input type="password" id="regPassword" name="password" required minlength="6">
+
+        <label for="regConfirmPassword">Confirm Password</label>
+        <input type="password" id="regConfirmPassword" name="confirmPassword" required minlength="6">
+
+        <div class="error hidden" id="registerError"></div>
+        <button type="submit">Create Profile</button>
+        <div class="dashboard-links">
+            Already have a profile? <a id="toLogin">Login</a>
+        </div>
     </form>
 </div>
 
+<!-- Login Page -->
+<div class="container hidden" id="loginContainer">
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="loginRegNumber">Registration Number</label>
+        <input type="text" id="loginRegNumber" name="loginRegNumber" required>
+
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" name="loginPassword" required>
+
+        <div class="error hidden" id="loginError"></div>
+        <button type="submit">Login</button>
+        <div class="dashboard-links">
+            No profile? <a id="toRegister">Create one</a>
+        </div>
+    </form>
+</div>
+
+<!-- Dashboard Page -->
 <div class="container hidden" id="dashboardContainer">
     <h2>Welcome, <span id="userName"></span></h2>
     <p>Course: <span id="userCourse"></span></p>
     <p>Registration No: <span id="userReg"></span></p>
-    <hr>
-    <h3>Attendance</h3>
-    <form id="attendanceForm">
-        <div class="fingerprint-section">
-            <button type="button" class="fingerprint-btn" id="fingerprintBtn">
-                Scan Fingerprint
-            </button>
-            <div id="fingerprintStatus"></div>
-        </div>
-        <button type="submit" id="markAttendanceBtn" disabled>Mark Attendance</button>
-    </form>
-    <div class="success hidden" id="attendanceSuccess">
-        Attendance recorded successfully!
+    <div class="dashboard-links">
+        <a id="markAttendanceLink" href="#">Mark Attendance</a> | 
+        <a id="viewAttendanceLink" href="#">My Attendance</a> | 
+        <a id="logoutBtn" href="#">Logout</a>
     </div>
+    <div id="dashboardSection"></div>
 </div>
 
 <script>
-    // Handle Login/Register
-    const loginForm = document.getElementById('loginForm');
+    // Simulated "admin" credentials
+    const CLASS_MASTER_REG = "classmaster";
+    const CLASS_MASTER_PASS = "master123";
+
+    // =============== Registration ===============
+
+    const registerContainer = document.getElementById('registerContainer');
+    const registerForm = document.getElementById('registerForm');
+    const registerError = document.getElementById('registerError');
+    const toLogin = document.getElementById('toLogin');
+
+    toLogin.onclick = function() {
+        registerContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('regFullName').value.trim();
+        const regNumber = document.getElementById('regRegNumber').value.trim();
+        const course = document.getElementById('regCourse').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if(password !== confirmPassword) {
+            registerError.textContent = "Passwords do not match.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+        if(password.length < 6) {
+            registerError.textContent = "Password must be at least 6 characters.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+
+        // Save user data (using localStorage by registration number for demo)
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        if(users[regNumber]) {
+            registerError.textContent = "Registration number already exists.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+        users[regNumber] = {
+            fullName,
+            regNumber,
+            course,
+            password, // In a real app, NEVER store plain password.
+            attendance: []
+        };
+        localStorage.setItem('attendanceUsers', JSON.stringify(users));
+        localStorage.setItem('attendanceCurrentUser', regNumber);
+
+        // Go to dashboard
+        registerForm.reset();
+        showDashboard(users[regNumber]);
+    });
+
+    // =============== Login ===============
+
     const loginContainer = document.getElementById('loginContainer');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const toRegister = document.getElementById('toRegister');
+
+    toRegister.onclick = function() {
+        loginContainer.classList.add('hidden');
+        registerContainer.classList.remove('hidden');
+    };
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const regNumber = document.getElementById('loginRegNumber').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        // Admin login
+        if(regNumber === CLASS_MASTER_REG && password === CLASS_MASTER_PASS) {
+            localStorage.setItem('attendanceCurrentUser', CLASS_MASTER_REG);
+            showHome();
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        if(users[regNumber] && users[regNumber].password === password) {
+            localStorage.setItem('attendanceCurrentUser', regNumber);
+            showDashboard(users[regNumber]);
+        } else {
+            loginError.textContent = "Invalid registration number or password.";
+            loginError.classList.remove('hidden');
+        }
+    });
+
+    // =============== Dashboard ===============
     const dashboardContainer = document.getElementById('dashboardContainer');
     const userName = document.getElementById('userName');
     const userReg = document.getElementById('userReg');
     const userCourse = document.getElementById('userCourse');
+    const dashboardSection = document.getElementById('dashboardSection');
+    const markAttendanceLink = document.getElementById('markAttendanceLink');
+    const viewAttendanceLink = document.getElementById('viewAttendanceLink');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const fullName = document.getElementById('fullName').value;
-        const regNumber = document.getElementById('regNumber').value;
-        const course = document.getElementById('course').value;
+    markAttendanceLink.onclick = function() {
+        dashboardSection.innerHTML = `
+            <form id="attendanceForm">
+                <button type="submit" id="markAttendanceBtn">Mark Attendance</button>
+            </form>
+            <div class="success hidden" id="attendanceSuccess">Attendance recorded successfully!</div>
+        `;
+        document.getElementById('attendanceForm').onsubmit = handleAttendance;
+    };
 
-        // Save user data (in real projects, use backend/database)
-        localStorage.setItem('attendanceUser', JSON.stringify({
-            fullName,
-            regNumber,
-            course
-        }));
-
-        userName.textContent = fullName;
-        userReg.textContent = regNumber;
-        userCourse.textContent = course;
-
-        loginContainer.classList.add('hidden');
-        dashboardContainer.classList.remove('hidden');
-    });
-
-    // If already logged in
-    window.onload = function() {
-        const user = localStorage.getItem('attendanceUser');
-        if (user) {
-            const { fullName, regNumber, course } = JSON.parse(user);
-            userName.textContent = fullName;
-            userReg.textContent = regNumber;
-            userCourse.textContent = course;
-            loginContainer.classList.add('hidden');
-            dashboardContainer.classList.remove('hidden');
+    viewAttendanceLink.onclick = function() {
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if(user) {
+            let table = `<table class="attendance-table">
+                <tr><th>#</th><th>Date</th><th>Time</th></tr>`;
+            if(user.attendance.length === 0) {
+                table += "<tr><td colspan='3'>No attendance records.</td></tr>";
+            } else {
+                user.attendance.forEach((a, i) => {
+                    table += `<tr>
+                        <td>${i+1}</td>
+                        <td>${a.date}</td>
+                        <td>${a.time}</td>
+                    </tr>`;
+                });
+            }
+            table += "</table>";
+            dashboardSection.innerHTML = `<h3>My Attendance</h3>${table}`;
         }
     };
 
-    // Fingerprint Simulation
-    const fingerprintBtn = document.getElementById('fingerprintBtn');
-    const fingerprintStatus = document.getElementById('fingerprintStatus');
-    const markAttendanceBtn = document.getElementById('markAttendanceBtn');
-    let fingerprintVerified = false;
+    logoutBtn.onclick = function() {
+        localStorage.removeItem('attendanceCurrentUser');
+        dashboardContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
 
-    fingerprintBtn.addEventListener('click', function() {
-        fingerprintStatus.textContent = "Scanning fingerprint...";
-        markAttendanceBtn.disabled = true;
-
-        // Simulate fingerprint scan
-        setTimeout(() => {
-            fingerprintStatus.textContent = "Fingerprint recognized!";
-            fingerprintStatus.style.color = "green";
-            fingerprintVerified = true;
-            markAttendanceBtn.disabled = false;
-        }, 1700);
-    });
-
-    // Attendance
-    const attendanceForm = document.getElementById('attendanceForm');
-    const attendanceSuccess = document.getElementById('attendanceSuccess');
-    attendanceForm.addEventListener('submit', function(e) {
+    function handleAttendance(e) {
         e.preventDefault();
-        if (fingerprintVerified) {
-            attendanceSuccess.classList.remove('hidden');
-        } else {
-            attendanceSuccess.textContent = "Please verify fingerprint first!";
-            attendanceSuccess.classList.remove('hidden');
-            attendanceSuccess.style.color = 'red';
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if(user) {
+            const now = new Date();
+            const date = now.toLocaleDateString();
+            const time = now.toLocaleTimeString();
+            user.attendance.push({ date, time });
+            users[regNumber] = user;
+            localStorage.setItem('attendanceUsers', JSON.stringify(users));
+            document.getElementById('attendanceSuccess').classList.remove('hidden');
         }
-    });
+    }
+
+    function showDashboard(user) {
+        registerContainer.classList.add('hidden');
+        loginContainer.classList.add('hidden');
+        dashboardContainer.classList.remove('hidden');
+        userName.textContent = user.fullName;
+        userReg.textContent = user.regNumber;
+        userCourse.textContent = user.course;
+        dashboardSection.innerHTML = '';
+    }
+
+    // =============== Home (Admin - Class Master) ===============
+    const homeContainer = document.getElementById('homeContainer');
+    const attendanceRecords = document.getElementById('attendanceRecords');
+    const logoutHome = document.getElementById('logoutHome');
+    logoutHome.onclick = function() {
+        localStorage.removeItem('attendanceCurrentUser');
+        homeContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    function showHome() {
+        // Only visible to class master
+        loginContainer.classList.add('hidden');
+        registerContainer.classList.add('hidden');
+        dashboardContainer.classList.add('hidden');
+        homeContainer.classList.remove('hidden');
+        // Show all attendance records
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        let html = '';
+        let hasAttendance = false;
+        for(const reg in users) {
+            const user = users[reg];
+            if(user.attendance && user.attendance.length > 0) {
+                hasAttendance = true;
+                html += `<div class="admin-section">
+                    <strong>${user.fullName} (${user.regNumber})</strong><br>
+                    <em>${user.course}</em>
+                    <table class="attendance-table" style="margin-top:10px;">
+                        <tr><th>#</th><th>Date</th><th>Time</th></tr>
+                        ${user.attendance.map((a,i) => `
+                            <tr>
+                                <td>${i+1}</td>
+                                <td>${a.date}</td>
+                                <td>${a.time}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>`;
+            }
+        }
+        if(!hasAttendance) html = "<p>No attendance records yet.</p>";
+        attendanceRecords.innerHTML = html;
+    }
+
+    // =============== On Load ===============
+    window.onload = function() {
+        const currentUser = localStorage.getItem('attendanceCurrentUser');
+        if(currentUser === CLASS_MASTER_REG) {
+            showHome();
+        } else if(currentUser) {
+            const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+            if(users[currentUser]) {
+                showDashboard(users[currentUser]);
+            } else {
+                localStorage.removeItem('attendanceCurrentUser');
+                registerContainer.classList.remove('hidden');
+            }
+        } else {
+            registerContainer.classList.remove('hidden');
+        }
+    };
 </script>
 </body>
 </html>
