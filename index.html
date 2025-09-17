@@ -8,7 +8,6 @@
         body { 
             font-family: Arial, sans-serif; 
             background: linear-gradient(135deg, #dbeafe 0%, #f1f5f9 100%);
-            /* A soft blue-gray gradient for a calm, modern look */
             margin: 0; 
             padding: 0; 
             min-height: 100vh;
@@ -20,6 +19,9 @@
             padding: 30px 40px 40px 40px; 
             border-radius: 14px; 
             box-shadow: 0 4px 24px rgba(30, 64, 175, 0.12);
+        }
+        .wide-container {
+            max-width: 900px;
         }
         h2 { text-align: center; color: #2563eb; }
         label { display: block; margin-top: 18px; margin-bottom: 6px; color: #222; }
@@ -71,12 +73,13 @@
     </style>
 </head>
 <body>
-<!-- Home Page (visible only to class master) -->
-<div class="container hidden" id="homeContainer">
-    <h2>Class Attendance Records</h2>
-    <div id="attendanceRecords"></div>
+<!-- Attendance for All (Visible to Everyone) -->
+<div class="container wide-container hidden" id="allAttendanceContainer">
+    <h2>All Students' Attendance Records</h2>
+    <div id="allAttendanceRecords"></div>
     <div class="dashboard-links">
-        <a id="logoutHome" href="#">Logout</a>
+        <a id="backToDashboard" href="#">Back to Dashboard</a>
+        <a id="logoutAllAttendance" href="#">Logout</a>
     </div>
 </div>
 
@@ -92,6 +95,9 @@
 
         <label for="course">Course of Study</label>
         <input type="text" id="regCourse" name="course" required>
+
+        <label for="fieldOfStudy">Field of Study</label>
+        <input type="text" id="regField" name="fieldOfStudy" required>
 
         <label for="regPassword">Create Password</label>
         <input type="password" id="regPassword" name="password" required minlength="6">
@@ -129,22 +135,23 @@
 <div class="container hidden" id="dashboardContainer">
     <h2>Welcome, <span id="userName"></span></h2>
     <p>Course: <span id="userCourse"></span></p>
+    <p>Field of Study: <span id="userField"></span></p>
     <p>Registration No: <span id="userReg"></span></p>
     <div class="dashboard-links">
         <a id="markAttendanceLink" href="#">Mark Attendance</a> | 
         <a id="viewAttendanceLink" href="#">My Attendance</a> | 
+        <a id="viewAllAttendanceLink" href="#">All Attendance</a> | 
         <a id="logoutBtn" href="#">Logout</a>
     </div>
     <div id="dashboardSection"></div>
 </div>
 
 <script>
-    // Simulated "admin" credentials
+    // Simulated "admin" credentials (still present if needed)
     const CLASS_MASTER_REG = "classmaster";
     const CLASS_MASTER_PASS = "master123";
 
-    // =============== Registration ===============
-
+    // Registration
     const registerContainer = document.getElementById('registerContainer');
     const registerForm = document.getElementById('registerForm');
     const registerError = document.getElementById('registerError');
@@ -160,6 +167,7 @@
         const fullName = document.getElementById('regFullName').value.trim();
         const regNumber = document.getElementById('regRegNumber').value.trim();
         const course = document.getElementById('regCourse').value.trim();
+        const field = document.getElementById('regField').value.trim();
         const password = document.getElementById('regPassword').value;
         const confirmPassword = document.getElementById('regConfirmPassword').value;
 
@@ -174,7 +182,6 @@
             return;
         }
 
-        // Save user data (using localStorage by registration number for demo)
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
         if(users[regNumber]) {
             registerError.textContent = "Registration number already exists.";
@@ -185,19 +192,18 @@
             fullName,
             regNumber,
             course,
-            password, // In a real app, NEVER store plain password.
+            field,
+            password,
             attendance: []
         };
         localStorage.setItem('attendanceUsers', JSON.stringify(users));
         localStorage.setItem('attendanceCurrentUser', regNumber);
 
-        // Go to dashboard
         registerForm.reset();
         showDashboard(users[regNumber]);
     });
 
-    // =============== Login ===============
-
+    // Login
     const loginContainer = document.getElementById('loginContainer');
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
@@ -213,10 +219,10 @@
         const regNumber = document.getElementById('loginRegNumber').value.trim();
         const password = document.getElementById('loginPassword').value;
 
-        // Admin login
+        // Admin login (kept, though not necessary for open attendance)
         if(regNumber === CLASS_MASTER_REG && password === CLASS_MASTER_PASS) {
             localStorage.setItem('attendanceCurrentUser', CLASS_MASTER_REG);
-            showHome();
+            showAllAttendance();
             return;
         }
 
@@ -230,14 +236,16 @@
         }
     });
 
-    // =============== Dashboard ===============
+    // Dashboard
     const dashboardContainer = document.getElementById('dashboardContainer');
     const userName = document.getElementById('userName');
     const userReg = document.getElementById('userReg');
     const userCourse = document.getElementById('userCourse');
+    const userField = document.getElementById('userField');
     const dashboardSection = document.getElementById('dashboardSection');
     const markAttendanceLink = document.getElementById('markAttendanceLink');
     const viewAttendanceLink = document.getElementById('viewAttendanceLink');
+    const viewAllAttendanceLink = document.getElementById('viewAllAttendanceLink');
     const logoutBtn = document.getElementById('logoutBtn');
 
     markAttendanceLink.onclick = function() {
@@ -273,6 +281,11 @@
         }
     };
 
+    viewAllAttendanceLink.onclick = function() {
+        dashboardContainer.classList.add('hidden');
+        showAllAttendance();
+    };
+
     logoutBtn.onclick = function() {
         localStorage.removeItem('attendanceCurrentUser');
         dashboardContainer.classList.add('hidden');
@@ -299,61 +312,79 @@
         registerContainer.classList.add('hidden');
         loginContainer.classList.add('hidden');
         dashboardContainer.classList.remove('hidden');
+        allAttendanceContainer.classList.add('hidden');
         userName.textContent = user.fullName;
         userReg.textContent = user.regNumber;
         userCourse.textContent = user.course;
+        userField.textContent = user.field || '';
         dashboardSection.innerHTML = '';
     }
 
-    // =============== Home (Admin - Class Master) ===============
-    const homeContainer = document.getElementById('homeContainer');
-    const attendanceRecords = document.getElementById('attendanceRecords');
-    const logoutHome = document.getElementById('logoutHome');
-    logoutHome.onclick = function() {
+    // All Attendance (Visible to Everyone)
+    const allAttendanceContainer = document.getElementById('allAttendanceContainer');
+    const allAttendanceRecords = document.getElementById('allAttendanceRecords');
+    const backToDashboard = document.getElementById('backToDashboard');
+    const logoutAllAttendance = document.getElementById('logoutAllAttendance');
+
+    backToDashboard.onclick = function() {
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        if (regNumber && regNumber !== CLASS_MASTER_REG) {
+            const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+            showDashboard(users[regNumber]);
+        } else {
+            // Go to login if not logged in as student
+            allAttendanceContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+        }
+    };
+
+    logoutAllAttendance.onclick = function() {
         localStorage.removeItem('attendanceCurrentUser');
-        homeContainer.classList.add('hidden');
+        allAttendanceContainer.classList.add('hidden');
         loginContainer.classList.remove('hidden');
     };
 
-    function showHome() {
-        // Only visible to class master
-        loginContainer.classList.add('hidden');
+    function showAllAttendance() {
         registerContainer.classList.add('hidden');
+        loginContainer.classList.add('hidden');
         dashboardContainer.classList.add('hidden');
-        homeContainer.classList.remove('hidden');
-        // Show all attendance records
+        allAttendanceContainer.classList.remove('hidden');
+
+        // Show all attendance records for all students
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
         let html = '';
         let hasAttendance = false;
         for(const reg in users) {
             const user = users[reg];
-            if(user.attendance && user.attendance.length > 0) {
-                hasAttendance = true;
-                html += `<div class="admin-section">
-                    <strong>${user.fullName} (${user.regNumber})</strong><br>
-                    <em>${user.course}</em>
-                    <table class="attendance-table" style="margin-top:10px;">
-                        <tr><th>#</th><th>Date</th><th>Time</th></tr>
-                        ${user.attendance.map((a,i) => `
+            html += `<div class="admin-section">
+                <strong>${user.fullName} (${user.regNumber})</strong><br>
+                <em>Course: ${user.course} <br>Field: ${user.field || ''}</em>
+                <table class="attendance-table" style="margin-top:10px;">
+                    <tr><th>#</th><th>Date</th><th>Time</th></tr>
+                    ${
+                        user.attendance && user.attendance.length > 0 ?
+                        user.attendance.map((a,i) => `
                             <tr>
                                 <td>${i+1}</td>
                                 <td>${a.date}</td>
                                 <td>${a.time}</td>
                             </tr>
-                        `).join('')}
-                    </table>
-                </div>`;
-            }
+                        `).join('') :
+                        '<tr><td colspan="3">No attendance records.</td></tr>'
+                    }
+                </table>
+            </div>`;
+            if (user.attendance && user.attendance.length > 0) hasAttendance = true;
         }
         if(!hasAttendance) html = "<p>No attendance records yet.</p>";
-        attendanceRecords.innerHTML = html;
+        allAttendanceRecords.innerHTML = html;
     }
 
-    // =============== On Load ===============
+    // On Load
     window.onload = function() {
         const currentUser = localStorage.getItem('attendanceCurrentUser');
         if(currentUser === CLASS_MASTER_REG) {
-            showHome();
+            showAllAttendance();
         } else if(currentUser) {
             const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
             if(users[currentUser]) {
