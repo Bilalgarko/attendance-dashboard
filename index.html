@@ -8,7 +8,6 @@
         body { 
             font-family: Arial, sans-serif; 
             background: linear-gradient(135deg, #134e1a 0%, #e9f5e1 100%);
-            /* Dark green to light green background */
             margin: 0; 
             padding: 0; 
             min-height: 100vh;
@@ -17,7 +16,6 @@
             max-width: 400px; 
             margin: 40px auto; 
             background: #fff;
-            /* White content panel */
             padding: 30px 40px 40px 40px; 
             border-radius: 16px; 
             box-shadow: 0 4px 24px rgba(19, 78, 26, 0.18), 0 0px 0px #134e1a;
@@ -53,7 +51,27 @@
             box-shadow: 0 2px 6px rgba(19, 78, 26, 0.12);
             transition: background 0.2s;
         }
-        button:hover, .profile-edit-btn:hover { background: #208b3a;}
+        button:hover, .profile-edit-btn:hover, .user-profile-btn:hover, .print-btn:hover { background: #208b3a;}
+        .print-btn {
+            width: auto;
+            padding: 8px 20px;
+            margin: 10px 0 0 0;
+            float: right;
+            font-size: 15px;
+        }
+        .user-profile-btn {
+            width: auto;
+            padding: 5px 13px;
+            margin: 0 0 0 8px;
+            background: #208b3a;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 13px;
+            box-shadow: 0 1px 3px rgba(19,78,26,0.08);
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s;
+        }
         .hidden { display: none; }
         .success { color: #178a42; text-align: center; margin-top: 20px;}
         .error { color: #ac2626; text-align: center; margin-top: 10px;}
@@ -126,6 +144,50 @@
         ::-webkit-scrollbar {width: 9px;}
         ::-webkit-scrollbar-thumb {background: #1c6e34; border-radius: 5px;}
         ::-webkit-scrollbar-track {background: #daf5d7;}
+        /* Modal Styles */
+        .modal-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(19,78,26,0.12);
+            z-index: 1010;
+        }
+        .modal-card {
+            background: #fff;
+            max-width: 450px;
+            margin: 80px auto;
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(19,78,26,0.19);
+            border: 2px solid #134e1a;
+            padding: 28px 30px 24px 30px;
+            z-index: 1020;
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 18px;
+            background: #ac2626;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 17px;
+            width: 28px; height: 28px;
+            cursor: pointer;
+        }
+        .modal-profile-photo {
+            width: 70px; height: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #208b3a;
+            margin-bottom: 13px;
+            background: #eafaea;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #attendancePrintSection, #attendancePrintSection * { visibility: visible; }
+            #attendancePrintSection { position: absolute; left: 0; top: 0; width: 100vw; background: #fff; }
+            .print-btn, .user-profile-btn, .dashboard-links, .profile-edit-btn, .profile-edit-form, .modal-bg, .modal-card, .modal-close-btn { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -244,10 +306,22 @@
         <a id="markAttendanceLink" href="#">Mark Attendance</a> | 
         <a id="viewAttendanceLink" href="#">My Attendance</a> | 
         <a id="viewAllAttendanceLink" href="#">All Attendance</a> | 
+        <a id="viewProfilesLink" href="#">View Class Profiles</a> | 
         <a id="logoutBtn" href="#">Logout</a>
     </div>
     <div id="dashboardSection"></div>
 </div>
+
+<!-- User Profile Modal -->
+<div class="modal-bg hidden" id="userProfileModalBg">
+    <div class="modal-card" id="userProfileModalCard">
+        <button class="modal-close-btn" id="closeUserProfileModal" title="Close">&times;</button>
+        <div id="userProfileModalContent"></div>
+    </div>
+</div>
+
+<!-- Print Section (hidden, used for print only) -->
+<div id="attendancePrintSection" style="display:none;"></div>
 
 <script>
     // Simulated "admin" credentials (still present if needed)
@@ -440,6 +514,7 @@
     const markAttendanceLink = document.getElementById('markAttendanceLink');
     const viewAttendanceLink = document.getElementById('viewAttendanceLink');
     const viewAllAttendanceLink = document.getElementById('viewAllAttendanceLink');
+    const viewProfilesLink = document.getElementById('viewProfilesLink');
     const logoutBtn = document.getElementById('logoutBtn');
     const editProfileBtn = document.getElementById('editProfileBtn');
     const profileEditForm = document.getElementById('profileEditForm');
@@ -479,31 +554,16 @@
     };
 
     viewAttendanceLink.onclick = function() {
-        const regNumber = localStorage.getItem('attendanceCurrentUser');
-        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
-        const user = users[regNumber];
-        if(user) {
-            let table = `<table class="attendance-table">
-                <tr><th>#</th><th>Date</th><th>Time</th></tr>`;
-            if(user.attendance.length === 0) {
-                table += "<tr><td colspan='3'>No attendance records.</td></tr>";
-            } else {
-                user.attendance.forEach((a, i) => {
-                    table += `<tr>
-                        <td>${i+1}</td>
-                        <td>${a.date}</td>
-                        <td>${a.time}</td>
-                    </tr>`;
-                });
-            }
-            table += "</table>";
-            dashboardSection.innerHTML = `<h3>My Attendance</h3>${table}`;
-        }
+        showAttendanceTableForUser(localStorage.getItem('attendanceCurrentUser'), true);
     };
 
     viewAllAttendanceLink.onclick = function() {
         dashboardContainer.classList.add('hidden');
         showAllAttendance();
+    };
+
+    viewProfilesLink.onclick = function() {
+        showProfilesList();
     };
 
     logoutBtn.onclick = function() {
@@ -586,7 +646,6 @@
         // Handle photo upload
         const file = editProfilePhoto.files[0];
         if (file) {
-            // Only preview and store small images in base64 for demo purposes
             if (file.size > 1024 * 1024) {
                 editProfileError.textContent = "Profile photo must be less than 1MB.";
                 editProfileError.classList.remove('hidden');
@@ -623,7 +682,6 @@
             const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
             showDashboard(users[regNumber]);
         } else {
-            // Go to login if not logged in as student
             allAttendanceContainer.classList.add('hidden');
             loginContainer.classList.remove('hidden');
         }
@@ -641,7 +699,7 @@
         dashboardContainer.classList.add('hidden');
         allAttendanceContainer.classList.remove('hidden');
 
-        // Show all attendance records for all students
+        // Show all attendance records for all students, with profile view buttons
         const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
         let html = '';
         let hasAttendance = false;
@@ -652,8 +710,10 @@
                 : `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px;border:1.5px solid #208b3a;">`;
             html += `<div class="admin-section">
                 ${img}
-                <strong style="vertical-align:middle;">${user.fullName} (${user.regNumber})</strong><br>
+                <strong style="vertical-align:middle;">${user.fullName} (${user.regNumber})</strong>
+                <button class="user-profile-btn" data-reg="${user.regNumber}" title="View Profile">Profile</button><br>
                 <em>Course: ${user.course} <br>Field: ${user.field || ''}</em>
+                <button class="print-btn" data-print-reg="${user.regNumber}" title="Print Attendance">Print</button>
                 <table class="attendance-table" style="margin-top:10px;">
                     <tr><th>#</th><th>Date</th><th>Time</th></tr>
                     ${
@@ -673,6 +733,198 @@
         }
         if(!hasAttendance) html = "<p>No attendance records yet.</p>";
         allAttendanceRecords.innerHTML = html;
+
+        // Attach event listeners for "Profile" and "Print" buttons
+        document.querySelectorAll('.user-profile-btn').forEach(btn => {
+            btn.onclick = function() {
+                const reg = btn.getAttribute('data-reg');
+                showUserProfileModal(reg);
+            };
+        });
+        document.querySelectorAll('.print-btn').forEach(btn => {
+            btn.onclick = function() {
+                const reg = btn.getAttribute('data-print-reg');
+                printAttendanceReport(reg);
+            };
+        });
+    }
+
+    // Show "My Attendance" in dashboard, with print button
+    function showAttendanceTableForUser(regNumber, showPrintBtn) {
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if(user) {
+            let table = `<h3>My Attendance</h3>
+                ${showPrintBtn ? `<button class="print-btn" id="printMyAttendanceBtn" style="float:right;">Print</button>` : ''}
+                <table class="attendance-table">
+                <tr><th>#</th><th>Date</th><th>Time</th></tr>`;
+            if(user.attendance.length === 0) {
+                table += "<tr><td colspan='3'>No attendance records.</td></tr>";
+            } else {
+                user.attendance.forEach((a, i) => {
+                    table += `<tr>
+                        <td>${i+1}</td>
+                        <td>${a.date}</td>
+                        <td>${a.time}</td>
+                    </tr>`;
+                });
+            }
+            table += "</table>";
+            dashboardSection.innerHTML = table;
+            if (showPrintBtn) {
+                document.getElementById('printMyAttendanceBtn').onclick = function() {
+                    printAttendanceReport(regNumber);
+                };
+            }
+        }
+    }
+
+    // Show all profiles with buttons to view attendance
+    function showProfilesList() {
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        let html = `<h3>Class Profiles</h3>`;
+        html += `<table class="attendance-table" style="margin-bottom:20px;">
+            <tr>
+                <th>Photo</th>
+                <th>Full Name</th>
+                <th>Reg No</th>
+                <th>Course</th>
+                <th>Field</th>
+                <th>Profile</th>
+                <th>Attendance</th>
+            </tr>`;
+        let any = false;
+        for(const reg in users) {
+            const user = users[reg];
+            let img = user.profilePhoto
+                ? `<img src="${user.profilePhoto}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;border:1.5px solid #208b3a;">`
+                : `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;border:1.5px solid #208b3a;">`;
+            html += `<tr>
+                <td>${img}</td>
+                <td>${user.fullName}</td>
+                <td>${user.regNumber}</td>
+                <td>${user.course}</td>
+                <td>${user.field || ''}</td>
+                <td><button class="user-profile-btn" data-reg="${user.regNumber}" title="View Profile">Profile</button></td>
+                <td><button class="user-attendance-btn" data-reg="${user.regNumber}" title="View Attendance">Attendance</button></td>
+            </tr>`;
+            any = true;
+        }
+        if (!any) {
+            html += `<tr><td colspan="7">No profiles found.</td></tr>`;
+        }
+        html += `</table>`;
+        dashboardSection.innerHTML = html;
+
+        // Attach event listeners for each profile and attendance button
+        document.querySelectorAll('.user-profile-btn').forEach(btn => {
+            btn.onclick = function() {
+                const reg = btn.getAttribute('data-reg');
+                showUserProfileModal(reg);
+            };
+        });
+        document.querySelectorAll('.user-attendance-btn').forEach(btn => {
+            btn.onclick = function() {
+                const reg = btn.getAttribute('data-reg');
+                showOtherAttendanceTable(reg);
+            };
+        });
+    }
+
+    // Show another user's attendance table in the dashboard, with print
+    function showOtherAttendanceTable(regNumber) {
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if(user) {
+            let table = `<h3>${user.fullName}'s Attendance</h3>
+                <button class="print-btn" id="printOtherAttendanceBtn" style="float:right;">Print</button>
+                <table class="attendance-table">
+                <tr><th>#</th><th>Date</th><th>Time</th></tr>`;
+            if(user.attendance.length === 0) {
+                table += "<tr><td colspan='3'>No attendance records.</td></tr>";
+            } else {
+                user.attendance.forEach((a, i) => {
+                    table += `<tr>
+                        <td>${i+1}</td>
+                        <td>${a.date}</td>
+                        <td>${a.time}</td>
+                    </tr>`;
+                });
+            }
+            table += "</table>";
+            dashboardSection.innerHTML = table;
+            document.getElementById('printOtherAttendanceBtn').onclick = function() {
+                printAttendanceReport(regNumber);
+            };
+        }
+    }
+
+    // User Profile Modal
+    const userProfileModalBg = document.getElementById('userProfileModalBg');
+    const userProfileModalCard = document.getElementById('userProfileModalCard');
+    const userProfileModalContent = document.getElementById('userProfileModalContent');
+    const closeUserProfileModal = document.getElementById('closeUserProfileModal');
+    closeUserProfileModal.onclick = function() {
+        userProfileModalBg.classList.add('hidden');
+    };
+    userProfileModalBg.onclick = function(e) {
+        if (e.target === userProfileModalBg) userProfileModalBg.classList.add('hidden');
+    };
+    function showUserProfileModal(regNumber) {
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (user) {
+            let img = user.profilePhoto
+                ? `<img class="modal-profile-photo" src="${user.profilePhoto}" alt="Profile Photo">`
+                : `<img class="modal-profile-photo" src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}" alt="Profile Photo">`;
+            userProfileModalContent.innerHTML = `
+                <div style="text-align:center;">
+                    ${img}
+                    <div style="font-weight:bold;font-size:1.15em;color:#134e1a;">${user.fullName}</div>
+                    <div style="color:#178a42;margin-bottom:6px;">Reg No: ${user.regNumber}</div>
+                    <div style="margin-bottom:5px;">Course: ${user.course}<br>Field: ${user.field || ''}</div>
+                    <div><strong>Total Attendance:</strong> ${user.attendance ? user.attendance.length : 0}</div>
+                </div>
+            `;
+            userProfileModalBg.classList.remove('hidden');
+        }
+    }
+
+    // Print Attendance Report for a given user
+    function printAttendanceReport(regNumber) {
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) return;
+        let img = user.profilePhoto
+            ? `<img src="${user.profilePhoto}" style="width:60px;height:60px;object-fit:cover;border-radius:50%;border:2px solid #208b3a;margin-bottom:10px;background:#eafaea;">`
+            : `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}" style="width:60px;height:60px;object-fit:cover;border-radius:50%;border:2px solid #208b3a;margin-bottom:10px;background:#eafaea;">`;
+        let html = `
+            <div style="text-align:center;margin-bottom:20px;">
+                <h2 style="color:#134e1a;">Attendance Report</h2>
+                ${img}
+                <div style="font-weight:bold;font-size:1.13em;">${user.fullName} (${user.regNumber})</div>
+                <div style="margin:2px 0 5px 0;">Course: ${user.course} | Field: ${user.field || ""}</div>
+                <div><b>Total Attendance:</b> ${user.attendance ? user.attendance.length : 0}</div>
+            </div>
+            <table class="attendance-table" style="width:100%;margin:auto;">
+                <tr><th>#</th><th>Date</th><th>Time</th></tr>
+                ${user.attendance && user.attendance.length > 0 
+                    ? user.attendance.map((a,i) => `
+                        <tr>
+                            <td>${i+1}</td>
+                            <td>${a.date}</td>
+                            <td>${a.time}</td>
+                        </tr>
+                    `).join('')
+                    : '<tr><td colspan="3">No attendance records.</td></tr>'
+                }
+            </table>
+        `;
+        const printDiv = document.getElementById('attendancePrintSection');
+        printDiv.innerHTML = html;
+        printDiv.style.display = 'block';
+        window.print();
+        setTimeout(() => { printDiv.innerHTML = ''; printDiv.style.display = 'none'; }, 500);
     }
 
     // On Load
