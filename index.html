@@ -8,6 +8,7 @@
         body { 
             font-family: Arial, sans-serif; 
             background: linear-gradient(135deg, #134e1a 0%, #e9f5e1 100%);
+            /* Dark green to light green background */
             margin: 0; 
             padding: 0; 
             min-height: 100vh;
@@ -16,6 +17,7 @@
             max-width: 400px; 
             margin: 40px auto; 
             background: #fff;
+            /* White content panel */
             padding: 30px 40px 40px 40px; 
             border-radius: 16px; 
             box-shadow: 0 4px 24px rgba(19, 78, 26, 0.18), 0 0px 0px #134e1a;
@@ -120,6 +122,7 @@
         .profile-info-fields {
             flex: 1;
         }
+        /* Custom scroll bar */
         ::-webkit-scrollbar {width: 9px;}
         ::-webkit-scrollbar-thumb {background: #1c6e34; border-radius: 5px;}
         ::-webkit-scrollbar-track {background: #daf5d7;}
@@ -129,11 +132,6 @@
 <!-- Attendance for All (Visible to Everyone) -->
 <div class="container wide-container hidden" id="allAttendanceContainer">
     <h2>All Students' Attendance Records</h2>
-    <div class="dashboard-links" style="margin-bottom:8px;">
-        <button id="printAttendanceBtn" style="width:auto;background:#208b3a;color:#fff;padding:8px 18px;margin-bottom:8px;border-radius:6px;font-size:15px;border: none;cursor:pointer;box-shadow:0 2px 6px rgba(19,78,26,0.10);">
-            Print All Attendance Report
-        </button>
-    </div>
     <div id="allAttendanceRecords"></div>
     <div class="dashboard-links">
         <a id="backToDashboard" href="#">Back to Dashboard</a>
@@ -252,26 +250,448 @@
 </div>
 
 <script>
-// ... all your previous code above ... 
+    // Simulated "admin" credentials (still present if needed)
+    const CLASS_MASTER_REG = "classmaster";
+    const CLASS_MASTER_PASS = "master123";
 
-// Replace both logout functions as follows:
-logoutBtn.onclick = function() {
-    localStorage.removeItem('attendanceCurrentUser');
-    dashboardContainer.classList.add('hidden');
-    allAttendanceContainer.classList.add('hidden');
-    registerContainer.classList.add('hidden');
-    loginContainer.classList.remove('hidden');
-};
+    // Profile photo utility
+    function readAndPreviewPhoto(file, callback) {
+        if (!file) return callback('');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            callback(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
 
-logoutAllAttendance.onclick = function() {
-    localStorage.removeItem('attendanceCurrentUser');
-    allAttendanceContainer.classList.add('hidden');
-    dashboardContainer.classList.add('hidden');
-    registerContainer.classList.add('hidden');
-    loginContainer.classList.remove('hidden');
-};
+    // Registration
+    const registerContainer = document.getElementById('registerContainer');
+    const registerForm = document.getElementById('registerForm');
+    const registerError = document.getElementById('registerError');
+    const toLogin = document.getElementById('toLogin');
 
-// ... all your remaining code ...
+    toLogin.onclick = function() {
+        registerContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // All fields are required by HTML5, but we double-check for JS enforcement.
+        const fullName = document.getElementById('regFullName').value.trim();
+        const regNumber = document.getElementById('regRegNumber').value.trim();
+        const course = document.getElementById('regCourse').value.trim();
+        const field = document.getElementById('regField').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if(!fullName || !regNumber || !course || !field || !password || !confirmPassword) {
+            registerError.textContent = "All fields are required.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+
+        if(password !== confirmPassword) {
+            registerError.textContent = "Passwords do not match.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+        if(password.length < 6) {
+            registerError.textContent = "Password must be at least 6 characters.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        if(users[regNumber]) {
+            registerError.textContent = "Registration number already exists.";
+            registerError.classList.remove('hidden');
+            return;
+        }
+        users[regNumber] = {
+            fullName,
+            regNumber,
+            course,
+            field,
+            password,
+            profilePhoto: "",
+            attendance: []
+        };
+        localStorage.setItem('attendanceUsers', JSON.stringify(users));
+        localStorage.setItem('attendanceCurrentUser', regNumber);
+
+        registerForm.reset();
+        showDashboard(users[regNumber]);
+    });
+
+    // Login
+    const loginContainer = document.getElementById('loginContainer');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const toRegister = document.getElementById('toRegister');
+
+    toRegister.onclick = function() {
+        loginContainer.classList.add('hidden');
+        registerContainer.classList.remove('hidden');
+    };
+
+    // Forgot Password
+    const toForgotPassword = document.getElementById('toForgotPassword');
+    const forgotPasswordContainer = document.getElementById('forgotPasswordContainer');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const fpBackToLogin = document.getElementById('fpBackToLogin');
+    const forgotPasswordError = document.getElementById('forgotPasswordError');
+    const forgotPasswordSuccess = document.getElementById('forgotPasswordSuccess');
+
+    toForgotPassword.onclick = function() {
+        loginContainer.classList.add('hidden');
+        forgotPasswordContainer.classList.remove('hidden');
+        forgotPasswordForm.reset();
+        forgotPasswordError.classList.add('hidden');
+        forgotPasswordSuccess.classList.add('hidden');
+    };
+    fpBackToLogin.onclick = function() {
+        forgotPasswordContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    forgotPasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        forgotPasswordError.classList.add('hidden');
+        forgotPasswordSuccess.classList.add('hidden');
+        const regNumber = document.getElementById('fpRegNumber').value.trim();
+        const lastAttendance = document.getElementById('fpLastAttendance').value.trim();
+        const newPassword = document.getElementById('fpNewPassword').value;
+        const confirmPassword = document.getElementById('fpConfirmPassword').value;
+
+        if (!regNumber || !lastAttendance || !newPassword || !confirmPassword) {
+            forgotPasswordError.textContent = "All fields are required.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            forgotPasswordError.textContent = "Passwords do not match.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        if (newPassword.length < 6) {
+            forgotPasswordError.textContent = "Password must be at least 6 characters.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) {
+            forgotPasswordError.textContent = "Registration number not found.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        if (!user.attendance || user.attendance.length === 0) {
+            forgotPasswordError.textContent = "No attendance records found for this user.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        // Accept either MM/DD/YYYY or DD/MM/YYYY for flexibility, match either
+        const lastAttendanceSanitized = lastAttendance.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,''); // Remove spaces and unify separator
+        const attendedDates = user.attendance.map(a => a.date.replace(/-/g, '/').replace(/\./g,'/').replace(/\s/g,''));
+        const matched = attendedDates.some(d => d === lastAttendanceSanitized);
+        if (!matched) {
+            forgotPasswordError.textContent = "Last attendance date does not match our records.";
+            forgotPasswordError.classList.remove('hidden');
+            return;
+        }
+        user.password = newPassword;
+        users[regNumber] = user;
+        localStorage.setItem('attendanceUsers', JSON.stringify(users));
+        forgotPasswordSuccess.textContent = "Password reset successful! You can now login with your new password.";
+        forgotPasswordSuccess.classList.remove('hidden');
+    });
+
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const regNumber = document.getElementById('loginRegNumber').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        // Admin login (kept, though not necessary for open attendance)
+        if(regNumber === CLASS_MASTER_REG && password === CLASS_MASTER_PASS) {
+            localStorage.setItem('attendanceCurrentUser', CLASS_MASTER_REG);
+            showAllAttendance();
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        if(users[regNumber] && users[regNumber].password === password) {
+            localStorage.setItem('attendanceCurrentUser', regNumber);
+            showDashboard(users[regNumber]);
+        } else {
+            loginError.textContent = "Invalid registration number or password.";
+            loginError.classList.remove('hidden');
+        }
+    });
+
+    // Dashboard
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    const userName = document.getElementById('userName');
+    const userReg = document.getElementById('userReg');
+    const userCourse = document.getElementById('userCourse');
+    const userField = document.getElementById('userField');
+    const profilePhoto = document.getElementById('profilePhoto');
+    const dashboardSection = document.getElementById('dashboardSection');
+    const markAttendanceLink = document.getElementById('markAttendanceLink');
+    const viewAttendanceLink = document.getElementById('viewAttendanceLink');
+    const viewAllAttendanceLink = document.getElementById('viewAllAttendanceLink');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const profileEditForm = document.getElementById('profileEditForm');
+    const editFullName = document.getElementById('editFullName');
+    const editCourse = document.getElementById('editCourse');
+    const editField = document.getElementById('editField');
+    const editProfilePhoto = document.getElementById('editProfilePhoto');
+    const editProfileError = document.getElementById('editProfileError');
+    const cancelEditProfile = document.getElementById('cancelEditProfile');
+
+    let currentProfilePhotoURL = "";
+
+    function updateProfileUI(user) {
+        userName.textContent = user.fullName;
+        userReg.textContent = user.regNumber;
+        userCourse.textContent = user.course;
+        userField.textContent = user.field || '';
+        // Handle photo
+        let url = user.profilePhoto;
+        if (url) {
+            profilePhoto.src = url;
+        } else {
+            // fallback avatar with initials
+            profilePhoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}`;
+        }
+    }
+
+    markAttendanceLink.onclick = function() {
+        dashboardSection.innerHTML = `
+            <form id="attendanceForm">
+                <button type="submit" id="markAttendanceBtn">Mark Attendance</button>
+            </form>
+            <div class="success hidden" id="attendanceSuccess">Attendance recorded successfully!</div>
+            <div class="error hidden" id="attendanceError"></div>
+        `;
+        document.getElementById('attendanceForm').onsubmit = handleAttendance;
+    };
+
+    viewAttendanceLink.onclick = function() {
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if(user) {
+            let table = `<table class="attendance-table">
+                <tr><th>#</th><th>Date</th><th>Time</th></tr>`;
+            if(user.attendance.length === 0) {
+                table += "<tr><td colspan='3'>No attendance records.</td></tr>";
+            } else {
+                user.attendance.forEach((a, i) => {
+                    table += `<tr>
+                        <td>${i+1}</td>
+                        <td>${a.date}</td>
+                        <td>${a.time}</td>
+                    </tr>`;
+                });
+            }
+            table += "</table>";
+            dashboardSection.innerHTML = `<h3>My Attendance</h3>${table}`;
+        }
+    };
+
+    viewAllAttendanceLink.onclick = function() {
+        dashboardContainer.classList.add('hidden');
+        showAllAttendance();
+    };
+
+    logoutBtn.onclick = function() {
+        localStorage.removeItem('attendanceCurrentUser');
+        dashboardContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    function handleAttendance(e) {
+        e.preventDefault();
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        const attendanceSuccess = document.getElementById('attendanceSuccess');
+        const attendanceError = document.getElementById('attendanceError');
+        attendanceSuccess.classList.add('hidden');
+        attendanceError.classList.add('hidden');
+
+        if(user) {
+            const now = new Date();
+            const date = now.toLocaleDateString();
+            // Check if attendance already marked today
+            const alreadyMarked = user.attendance.some(entry => entry.date === date);
+            if(alreadyMarked) {
+                attendanceError.textContent = "You have already marked attendance for today.";
+                attendanceError.classList.remove('hidden');
+                return;
+            }
+            const time = now.toLocaleTimeString();
+            user.attendance.push({ date, time });
+            users[regNumber] = user;
+            localStorage.setItem('attendanceUsers', JSON.stringify(users));
+            attendanceSuccess.classList.remove('hidden');
+        }
+    }
+
+    function showDashboard(user) {
+        registerContainer.classList.add('hidden');
+        loginContainer.classList.add('hidden');
+        dashboardContainer.classList.remove('hidden');
+        allAttendanceContainer.classList.add('hidden');
+        profileEditForm.classList.add('hidden');
+        updateProfileUI(user);
+        dashboardSection.innerHTML = '';
+    }
+
+    // Profile Edit
+    editProfileBtn.onclick = function() {
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) return;
+        editFullName.value = user.fullName;
+        editCourse.value = user.course;
+        editField.value = user.field;
+        currentProfilePhotoURL = user.profilePhoto || "";
+        profileEditForm.classList.remove('hidden');
+    };
+
+    cancelEditProfile.onclick = function() {
+        profileEditForm.classList.add('hidden');
+        editProfileError.classList.add('hidden');
+    };
+
+    profileEditForm.onsubmit = function(e) {
+        e.preventDefault();
+        editProfileError.classList.add('hidden');
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        const user = users[regNumber];
+        if (!user) return;
+        const newFullName = editFullName.value.trim();
+        const newCourse = editCourse.value.trim();
+        const newField = editField.value.trim();
+        if (!newFullName || !newCourse || !newField) {
+            editProfileError.textContent = "All fields are required.";
+            editProfileError.classList.remove('hidden');
+            return;
+        }
+        // Handle photo upload
+        const file = editProfilePhoto.files[0];
+        if (file) {
+            // Only preview and store small images in base64 for demo purposes
+            if (file.size > 1024 * 1024) {
+                editProfileError.textContent = "Profile photo must be less than 1MB.";
+                editProfileError.classList.remove('hidden');
+                return;
+            }
+            readAndPreviewPhoto(file, function(dataUrl) {
+                user.profilePhoto = dataUrl;
+                finishProfileEditUpdate();
+            });
+        } else {
+            user.profilePhoto = currentProfilePhotoURL;
+            finishProfileEditUpdate();
+        }
+        function finishProfileEditUpdate() {
+            user.fullName = newFullName;
+            user.course = newCourse;
+            user.field = newField;
+            users[regNumber] = user;
+            localStorage.setItem('attendanceUsers', JSON.stringify(users));
+            profileEditForm.classList.add('hidden');
+            updateProfileUI(user);
+        }
+    };
+
+    // All Attendance (Visible to Everyone)
+    const allAttendanceContainer = document.getElementById('allAttendanceContainer');
+    const allAttendanceRecords = document.getElementById('allAttendanceRecords');
+    const backToDashboard = document.getElementById('backToDashboard');
+    const logoutAllAttendance = document.getElementById('logoutAllAttendance');
+
+    backToDashboard.onclick = function() {
+        const regNumber = localStorage.getItem('attendanceCurrentUser');
+        if (regNumber && regNumber !== CLASS_MASTER_REG) {
+            const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+            showDashboard(users[regNumber]);
+        } else {
+            // Go to login if not logged in as student
+            allAttendanceContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+        }
+    };
+
+    logoutAllAttendance.onclick = function() {
+        localStorage.removeItem('attendanceCurrentUser');
+        allAttendanceContainer.classList.add('hidden');
+        loginContainer.classList.remove('hidden');
+    };
+
+    function showAllAttendance() {
+        registerContainer.classList.add('hidden');
+        loginContainer.classList.add('hidden');
+        dashboardContainer.classList.add('hidden');
+        allAttendanceContainer.classList.remove('hidden');
+
+        // Show all attendance records for all students
+        const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+        let html = '';
+        let hasAttendance = false;
+        for(const reg in users) {
+            const user = users[reg];
+            let img = user.profilePhoto
+                ? `<img src="${user.profilePhoto}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px;border:1.5px solid #208b3a;">`
+                : `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:10px;border:1.5px solid #208b3a;">`;
+            html += `<div class="admin-section">
+                ${img}
+                <strong style="vertical-align:middle;">${user.fullName} (${user.regNumber})</strong><br>
+                <em>Course: ${user.course} <br>Field: ${user.field || ''}</em>
+                <table class="attendance-table" style="margin-top:10px;">
+                    <tr><th>#</th><th>Date</th><th>Time</th></tr>
+                    ${
+                        user.attendance && user.attendance.length > 0 ?
+                        user.attendance.map((a,i) => `
+                            <tr>
+                                <td>${i+1}</td>
+                                <td>${a.date}</td>
+                                <td>${a.time}</td>
+                            </tr>
+                        `).join('') :
+                        '<tr><td colspan="3">No attendance records.</td></tr>'
+                    }
+                </table>
+            </div>`;
+            if (user.attendance && user.attendance.length > 0) hasAttendance = true;
+        }
+        if(!hasAttendance) html = "<p>No attendance records yet.</p>";
+        allAttendanceRecords.innerHTML = html;
+    }
+
+    // On Load
+    window.onload = function() {
+        const currentUser = localStorage.getItem('attendanceCurrentUser');
+        if(currentUser === CLASS_MASTER_REG) {
+            showAllAttendance();
+        } else if(currentUser) {
+            const users = JSON.parse(localStorage.getItem('attendanceUsers') || '{}');
+            if(users[currentUser]) {
+                showDashboard(users[currentUser]);
+            } else {
+                localStorage.removeItem('attendanceCurrentUser');
+                registerContainer.classList.remove('hidden');
+            }
+        } else {
+            registerContainer.classList.remove('hidden');
+        }
+    };
 </script>
 </body>
 </html>
